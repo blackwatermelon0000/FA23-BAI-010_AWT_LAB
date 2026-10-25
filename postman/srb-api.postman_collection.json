@@ -1,0 +1,1950 @@
+{
+  "info": {
+    "name": "CampusSpace API | Ayesha Mehmood FA23-BAI-010",
+    "description": "Customized submission examples for Ayesha Mehmood, FA23-BAI-010. Run npm run seed, then execute the collection in order. Preserves established room codes and API behavior.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "freeSlotId",
+      "value": ""
+    },
+    {
+      "key": "fullSlotId",
+      "value": ""
+    },
+    {
+      "key": "newSlotId",
+      "value": ""
+    },
+    {
+      "key": "slotDate",
+      "value": ""
+    },
+    {
+      "key": "newRegNo",
+      "value": ""
+    },
+    {
+      "key": "seededRegNo",
+      "value": "FA23-BAI-010"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health & errors",
+      "item": [
+        {
+          "name": "Health check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('status ok', () => pm.expect(pm.response.json()).to.eql({ status: 'ok' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Unknown route -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(404);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});",
+                  "pm.test('Route not found', () => pm.expect(pm.response.json().error.message).to.eql('Route not found'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/does-not-exist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "does-not-exist"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Rooms",
+      "item": [
+        {
+          "name": "List rooms",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('At least 3 rooms', () => pm.expect(pm.response.json().length).to.be.at.least(3));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get room ROOM-01",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('roomCode', () => pm.expect(pm.response.json().roomCode).to.eql('ROOM-01'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms/ROOM-01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "ROOM-01"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get unknown room -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(404);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms/ROOM-404",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "ROOM-404"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create room ROOM-99",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomCode\": \"ROOM-99\",\n  \"name\": \"Test Room\",\n  \"building\": \"Academic Block\",\n  \"seats\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create duplicate room -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(409);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomCode\": \"ROOM-99\",\n  \"name\": \"Again\",\n  \"building\": \"Academic Block\",\n  \"seats\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create room with invalid data -> 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(422);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomCode\": \"R1\",\n  \"name\": \"Bad Room\",\n  \"seats\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create room with malformed JSON -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(400);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"roomCode\": \"ROOM-98\", ",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PATCH room name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Name changed', () => pm.expect(pm.response.json().name).to.eql('Renamed Test Room'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms/ROOM-99",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "ROOM-99"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Renamed Test Room\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PATCH roomCode -> 422 (not changeable)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(422);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms/ROOM-99",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "ROOM-99"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomCode\": \"ROOM-77\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT room (replace)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms/ROOM-99",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "ROOM-99"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomCode\": \"ROOM-99\",\n  \"name\": \"Replaced Room\",\n  \"building\": \"New Block\",\n  \"seats\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT room with missing field -> 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(422);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms/ROOM-99",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "ROOM-99"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Only name\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Slots",
+      "item": [
+        {
+          "name": "List free slots of ROOM-01 (filters + paging)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Paged result', () => { pm.expect(body.page).to.eql(1); pm.expect(body.limit).to.eql(5); pm.expect(body.data.length).to.be.at.most(5); });",
+                  "pm.test('Only ROOM-01 slots with seats', () => body.data.forEach(s => { pm.expect(s.roomCode).to.eql('ROOM-01'); pm.expect(s.booked).to.be.below(s.seats); }));",
+                  "const free = body.data.find(s => s.booked === 0) || body.data[0];",
+                  "pm.collectionVariables.set('freeSlotId', free.id);",
+                  "pm.collectionVariables.set('slotDate', free.date);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/slots?roomCode=ROOM-01&hasSeats=true&page=1&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "slots"
+              ],
+              "query": [
+                {
+                  "key": "roomCode",
+                  "value": "ROOM-01"
+                },
+                {
+                  "key": "hasSeats",
+                  "value": "true"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List full slots of ROOM-03",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Seed has a full slot', () => pm.expect(body.data.length).to.be.at.least(1));",
+                  "if (body.data.length) pm.collectionVariables.set('fullSlotId', body.data[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/slots?roomCode=ROOM-03&hasSeats=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "slots"
+              ],
+              "query": [
+                {
+                  "key": "roomCode",
+                  "value": "ROOM-03"
+                },
+                {
+                  "key": "hasSeats",
+                  "value": "false"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List slots by date",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('All on the date', () => pm.response.json().data.forEach(s => pm.expect(s.date).to.eql(pm.collectionVariables.get('slotDate'))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/slots?date={{slotDate}}&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "slots"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{slotDate}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List slots with bad page -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(400);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/slots?page=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "slots"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "abc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create slot for ROOM-99",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const s = pm.response.json();",
+                  "pm.test('Seats copied from room, booked = 0', () => { pm.expect(s.seats).to.eql(4); pm.expect(s.booked).to.eql(0); });",
+                  "pm.collectionVariables.set('newSlotId', s.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/slots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "slots"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomCode\": \"ROOM-99\",\n  \"date\": \"{{slotDate}}\",\n  \"startHour\": 8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create duplicate slot -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(409);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/slots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "slots"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomCode\": \"ROOM-99\",\n  \"date\": \"{{slotDate}}\",\n  \"startHour\": 8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create slot with invalid startHour -> 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(422);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/slots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "slots"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomCode\": \"ROOM-99\",\n  \"date\": \"{{slotDate}}\",\n  \"startHour\": 9\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create slot for unknown room -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(404);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/slots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "slots"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomCode\": \"ROOM-404\",\n  \"date\": \"{{slotDate}}\",\n  \"startHour\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get slot by id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has seatsLeft', () => pm.expect(pm.response.json().seatsLeft).to.be.a('number'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/slots/{{freeSlotId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "slots",
+                "{{freeSlotId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get slot with invalid id -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(400);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/slots/not-an-id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "slots",
+                "not-an-id"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get slot that does not exist -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(404);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/slots/000000000000000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "slots",
+                "000000000000000000000000"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Students",
+      "item": [
+        {
+          "name": "Create student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('newRegNo', 'FA23-TST-' + (100 + Math.floor(Math.random() * 900)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"regNo\": \"{{newRegNo}}\",\n  \"name\": \"Postman Student\",\n  \"email\": \"postman.student@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create same student again -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(409);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"regNo\": \"{{newRegNo}}\",\n  \"name\": \"Postman Student\",\n  \"email\": \"postman.student@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create student with invalid data -> 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(422);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"regNo\": \"12345\",\n  \"name\": \"\",\n  \"email\": \"not-an-email\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/{{newRegNo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                "{{newRegNo}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get unknown student -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(404);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/FA99-XYZ-000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                "FA99-XYZ-000"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Bookings",
+      "item": [
+        {
+          "name": "Book a free slot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Booking returned', () => { const b = pm.response.json(); pm.expect(b.slotId).to.eql(pm.collectionVariables.get('freeSlotId')); pm.expect(b.roomName).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/{{newRegNo}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                "{{newRegNo}}",
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slotId\": \"{{freeSlotId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Book the same slot again -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(409);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});",
+                  "pm.test('ALREADY_BOOKED', () => pm.expect(pm.response.json().error.code).to.eql('ALREADY_BOOKED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/{{newRegNo}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                "{{newRegNo}}",
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slotId\": \"{{freeSlotId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Book a full slot -> 409 SLOT_FULL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(409);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});",
+                  "pm.test('SLOT_FULL', () => pm.expect(pm.response.json().error.code).to.eql('SLOT_FULL'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/{{newRegNo}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                "{{newRegNo}}",
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slotId\": \"{{fullSlotId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Book for unknown student -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(404);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/FA99-XYZ-000/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                "FA99-XYZ-000",
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slotId\": \"{{freeSlotId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Book a slot that does not exist -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(404);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/{{newRegNo}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                "{{newRegNo}}",
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slotId\": \"000000000000000000000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Book without slotId -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(400);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/{{newRegNo}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                "{{newRegNo}}",
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List student's bookings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has room name, date and start hour', () => { const b = pm.response.json()[0]; pm.expect(b).to.include.keys('roomName', 'date', 'startHour'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/{{newRegNo}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                "{{newRegNo}}",
+                "bookings"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/{{newRegNo}}/bookings/{{freeSlotId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                "{{newRegNo}}",
+                "bookings",
+                "{{freeSlotId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel the same booking again -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(404);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/students/{{newRegNo}}/bookings/{{freeSlotId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "students",
+                "{{newRegNo}}",
+                "bookings",
+                "{{freeSlotId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. GraphQL",
+      "item": [
+        {
+          "name": "Student dashboard (dashboard.graphql)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Student with bookings', () => pm.expect(pm.response.json().data.student.bookings).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query StudentDashboard($regNo: String!) {\n  student(regNo: $regNo) {\n    regNo\n    name\n    email\n    bookings { slotId roomCode roomName date startHour endHour bookedAt }\n  }\n}",
+                "variables": "{\n  \"regNo\": \"{{seededRegNo}}\"\n}"
+              }
+            }
+          }
+        },
+        {
+          "name": "Rooms and slots",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('No errors', () => pm.expect(pm.response.json().errors).to.be.undefined);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query ($roomCode: String, $date: String) {\n  rooms { roomCode name seats }\n  slots(roomCode: $roomCode, date: $date) { id startHour seatsLeft room { name } }\n}",
+                "variables": "{\n  \"roomCode\": \"ROOM-01\",\n  \"date\": \"{{slotDate}}\"\n}"
+              }
+            }
+          }
+        },
+        {
+          "name": "bookSlot mutation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Booked', () => pm.expect(pm.response.json().data.bookSlot.seatsLeft).to.be.a('number'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation ($regNo: String!, $slotId: ID!) {\n  bookSlot(regNo: $regNo, slotId: $slotId) { id roomName date startHour seatsLeft }\n}",
+                "variables": "{\n  \"regNo\": \"{{newRegNo}}\",\n  \"slotId\": \"{{freeSlotId}}\"\n}"
+              }
+            }
+          }
+        },
+        {
+          "name": "bookSlot on a full slot (error SLOT_FULL)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('SLOT_FULL error', () => pm.expect(pm.response.json().errors[0].extensions.code).to.eql('SLOT_FULL'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation ($regNo: String!, $slotId: ID!) {\n  bookSlot(regNo: $regNo, slotId: $slotId) { id }\n}",
+                "variables": "{\n  \"regNo\": \"{{newRegNo}}\",\n  \"slotId\": \"{{fullSlotId}}\"\n}"
+              }
+            }
+          }
+        },
+        {
+          "name": "cancelBooking mutation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Cancelled', () => pm.expect(pm.response.json().data.cancelBooking).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            },
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation ($regNo: String!, $slotId: ID!) {\n  cancelBooking(regNo: $regNo, slotId: $slotId)\n}",
+                "variables": "{\n  \"regNo\": \"{{newRegNo}}\",\n  \"slotId\": \"{{freeSlotId}}\"\n}"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Cleanup",
+      "item": [
+        {
+          "name": "Delete room ROOM-99",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms/ROOM-99",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "ROOM-99"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get deleted room -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error has the standard shape', () => {",
+                  "  const e = pm.response.json().error;",
+                  "  pm.expect(e.status).to.eql(404);",
+                  "  pm.expect(e.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rooms/ROOM-99",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "ROOM-99"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

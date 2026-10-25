@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CampusSpace | Live Rooms</title>
+  <style>
+    :root {
+      --bg: #f1f5f9; --card: #fff; --text: #132238; --muted: #667085; --line: #e3e6ec;
+      --ok: #16a34a; --warn: #d97706; --full: #dc2626; --accent: #0f766e;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+    header { background: var(--card); border-bottom: 1px solid var(--line); padding: 16px 24px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+    h1 { margin: 0; font-size: 20px; }
+    .sub { color: var(--muted); font-size: 14px; margin-top: 2px; }
+    .status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: #fee2e2; color: var(--full); }
+    .status::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+    .status.connected { background: #dcfce7; color: var(--ok); }
+    form { display: flex; flex-wrap: wrap; gap: 8px; }
+    .filterbar { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 14px; color: var(--muted); margin-bottom: 14px; }
+    .filterbar label { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; }
+    .filterbar input { width: auto; }
+    .slot[hidden] { display: none; }
+    input, button, select { font: inherit; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); }
+    button { background: var(--accent); color: #fff; border-color: var(--accent); cursor: pointer; }
+    main { max-width: 1000px; margin: 0 auto; padding: 24px; }
+    #announcement { display: none; background: #ecfdf5; border: 1px solid #99f6e4; color: #115e59; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; }
+    #announcement.show { display: block; }
+    #announcement small { display: block; color: var(--muted); margin-top: 4px; }
+    #message { color: var(--muted); }
+    #message.error { color: var(--full); }
+    h2 { font-size: 15px; color: var(--muted); margin: 24px 0 10px; font-weight: 600; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+    .slot { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; transition: box-shadow .3s, border-color .3s; }
+    .slot.flash { border-color: var(--accent); box-shadow: 0 0 0 3px #99f6e4; }
+    .time { font-weight: 600; }
+    .left { font-size: 28px; font-weight: 700; margin: 8px 0 2px; color: var(--ok); }
+    .slot.low .left { color: var(--warn); }
+    .slot.full .left { color: var(--full); }
+    .of { color: var(--muted); font-size: 13px; }
+    .bar { height: 6px; border-radius: 3px; background: var(--line); margin-top: 10px; overflow: hidden; }
+    .bar > span { display: block; height: 100%; background: var(--ok); transition: width .3s; }
+    .slot.low .bar > span { background: var(--warn); }
+    .slot.full .bar > span { background: var(--full); }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">CampusSpace | Live Room Board</h1>
+      <div class="sub" id="subtitle">See campus study seats in real time</div>
+    </div>
+    <form id="roomForm">
+      <select id="roomSelect" aria-label="Choose campus room"><option value="">Choose a room</option></select>
+      <input id="roomInput" placeholder="ROOM-01" aria-label="Room code" required>
+      <button type="submit">Open room</button>
+    </form>
+    <span id="status" class="status">Disconnected</span>
+  </header>
+
+  <main>
+    <div id="announcement" role="status"><strong>Announcement: </strong><span id="announcementText"></span><small id="announcementTime"></small></div>
+    <div class="filterbar">
+      <label><input id="availableOnly" type="checkbox"> Show slots with free seats only</label>
+      <strong id="availabilitySummary" aria-live="polite">Loading availability...</strong>
+    </div>
+    <p id="message">Connecting...</p>
+    <div id="slots"></div>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // All text that comes from the server or users is written with textContent, never innerHTML.
+    const els = {
+      title: document.getElementById('title'),
+      subtitle: document.getElementById('subtitle'),
+      status: document.getElementById('status'),
+      message: document.getElementById('message'),
+      slots: document.getElementById('slots'),
+      form: document.getElementById('roomForm'),
+      input: document.getElementById('roomInput'),
+      roomSelect: document.getElementById('roomSelect'),
+      availableOnly: document.getElementById('availableOnly'),
+      summary: document.getElementById('availabilitySummary'),
+      announcement: document.getElementById('announcement'),
+      announcementText: document.getElementById('announcementText'),
+      announcementTime: document.getElementById('announcementTime'),
+    };
+
+    let roomCode = (new URLSearchParams(location.search).get('room') || 'ROOM-01').trim().toUpperCase();
+    els.input.value = roomCode;
+    const slotState = new Map(); // slotId -> { seats, seatsLeft, card }
+
+    const pad = (h) => String(h).padStart(2, '0') + ':00';
+
+    function setStatus(connected, text) {
+      els.status.classList.toggle('connected', connected);
+      els.status.textContent = text;
+    }
+
+    function showMessage(text, isError) {
+      els.message.textContent = text;
+      els.message.classList.toggle('error', Boolean(isError));
+      els.message.style.display = text ? '' : 'none';
+    }
+
+    // Filter and counts are derived from the live state map, so socket updates stay consistent.
+    function refreshAvailability() {
+      let total = 0;
+      let available = 0;
+      for (const state of slotState.values()) {
+        total++;
+        if (state.seatsLeft > 0) available++;
+        state.card.hidden = els.availableOnly.checked && state.seatsLeft === 0;
+      }
+      els.summary.textContent = `${available} of ${total} slots available`;
+    }
+
+    async function loadRoomOptions() {
+      try {
+        const response = await fetch('/api/v1/rooms');
+        if (!response.ok) return;
+        const rooms = await response.json();
+        els.roomSelect.replaceChildren(new Option('Choose a room', ''));
+        for (const room of rooms) els.roomSelect.add(new Option(`${room.roomCode} · ${room.name}`, room.roomCode));
+        els.roomSelect.value = roomCode;
+      } catch (_) { /* room code input remains usable offline */ }
+    }
+
+    function paintSlot(state) {
+      const { card, seats, seatsLeft } = state;
+      card.querySelector('.left').textContent = seatsLeft === 0 ? 'Full' : String(seatsLeft);
+      card.querySelector('.of').textContent = seatsLeft === 0
+        ? `0 of ${seats} seats left`
+        : `${seatsLeft === 1 ? 'seat' : 'seats'} left of ${seats}`;
+      card.querySelector('.bar > span').style.width = `${((seats - seatsLeft) / seats) * 100}%`;
+      card.classList.toggle('full', seatsLeft === 0);
+      card.classList.toggle('low', seatsLeft > 0 && seatsLeft / seats <= 0.25);
+    }
+
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function renderBoard(room, slots) {
+      els.title.textContent = `${room.roomCode} · ${room.name}`;
+      els.subtitle.textContent = `${room.building} · ${room.seats} seats`;
+      document.title = `${room.roomCode} | CampusSpace`;
+      els.roomSelect.value = room.roomCode;
+      els.slots.replaceChildren();
+      slotState.clear();
+      showMessage(slots.length ? '' : 'This room has no slots yet.');
+
+      let grid = null;
+      let currentDate = null;
+      for (const slot of slots) {
+        if (slot.date !== currentDate) {
+          currentDate = slot.date;
+          const label = new Date(`${slot.date}T00:00:00`).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+          els.slots.append(el('h2', '', label));
+          grid = el('div', 'grid');
+          els.slots.append(grid);
+        }
+        const card = el('div', 'slot');
+        card.dataset.slotId = slot.id;
+        const bar = el('div', 'bar');
+        bar.append(el('span'));
+        card.append(el('div', 'time', `${pad(slot.startHour)} – ${pad(slot.startHour + 2)}`), el('div', 'left'), el('div', 'of'), bar);
+        grid.append(card);
+
+        const state = { card, seats: slot.seats, seatsLeft: slot.seatsLeft };
+        slotState.set(slot.id, state);
+        paintSlot(state);
+      }
+      refreshAvailability();
+    }
+
+    // reconnectionDelayMax keeps retries frequent so a restarted server is picked up quickly.
+    const socket = io({ reconnectionDelayMax: 2000 });
+
+    function joinRoom() {
+      showMessage(`Loading ${roomCode}...`);
+      socket.emit('join:room', roomCode, (res) => {
+        if (!res || !res.ok) {
+          els.slots.replaceChildren();
+          slotState.clear();
+          els.title.textContent = 'CampusSpace | Live Room Board';
+          els.subtitle.textContent = 'See campus study seats in real time';
+          refreshAvailability();
+          showMessage((res && res.error) || 'Could not load room', true);
+          return;
+        }
+        renderBoard(res.room, res.slots);
+      });
+    }
+
+    // 'connect' fires on the first connection and after every reconnection, so after a
+    // server restart the board re-joins its room and redraws with the current seats.
+    socket.on('connect', () => {
+      setStatus(true, 'Connected');
+      joinRoom();
+    });
+    socket.on('disconnect', () => setStatus(false, 'Disconnected'));
+    socket.io.on('reconnect_attempt', (n) => setStatus(false, `Reconnecting (attempt ${n})...`));
+    socket.on('connect_error', () => setStatus(false, 'Disconnected'));
+
+    socket.on('slot:updated', ({ slotId, seatsLeft }) => {
+      const state = slotState.get(slotId);
+      if (!state) return;
+      state.seatsLeft = seatsLeft;
+      paintSlot(state);
+      refreshAvailability();
+      state.card.classList.add('flash');
+      setTimeout(() => state.card.classList.remove('flash'), 800);
+    });
+
+    socket.on('announce', ({ message, at }) => {
+      els.announcementText.textContent = message;
+      els.announcementTime.textContent = new Date(at).toLocaleTimeString();
+      els.announcement.classList.add('show');
+    });
+
+    els.availableOnly.addEventListener('change', refreshAvailability);
+    els.roomSelect.addEventListener('change', () => {
+      if (!els.roomSelect.value) return;
+      els.input.value = els.roomSelect.value;
+      els.form.requestSubmit();
+    });
+    loadRoomOptions();
+
+    els.form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      roomCode = els.input.value.trim().toUpperCase();
+      els.roomSelect.value = roomCode;
+      if (!roomCode) return;
+      history.replaceState(null, '', `?room=${encodeURIComponent(roomCode)}`);
+      if (socket.connected) joinRoom();
+    });
+  </script>
+</body>
+</html>

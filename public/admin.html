@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CampusSpace | Admin</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #f1f5f9; color: #132238; }
+    main { max-width: 560px; margin: 40px auto; padding: 0 16px; }
+    .card { background: #fff; border: 1px solid #e3e6ec; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    p { color: #667085; margin: 0 0 16px; }
+    label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+    input, textarea, button { font: inherit; width: 100%; padding: 9px 11px; border-radius: 8px; border: 1px solid #d0d5dd; }
+    textarea { min-height: 90px; resize: vertical; }
+    button { margin-top: 10px; background: #0f766e; color: #fff; border-color: #0f766e; cursor: pointer; }
+    button:disabled { background: #98a2b3; border-color: #98a2b3; cursor: not-allowed; }
+    #status { font-weight: 600; margin-top: 12px; }
+    .ok { color: #16a34a; } .err { color: #dc2626; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="card">
+      <h1>CampusSpace Admin</h1>
+      <p>Connect to the <code>/admin</code> namespace with the admin key from <code>.env</code>, then send an announcement to every open board.</p>
+      <form id="connectForm">
+        <label for="key">Admin key</label>
+        <input id="key" type="password" autocomplete="off" required>
+        <button type="submit">Connect</button>
+      </form>
+      <div id="status" class="err">Not connected</div>
+    </div>
+
+    <div class="card">
+      <form id="announceForm">
+        <label for="msg">Announcement</label>
+        <textarea id="msg" maxlength="300" placeholder="Library closes at 18:00 today" required></textarea>
+        <button id="send" type="submit" disabled>Send to all boards</button>
+      </form>
+      <div id="result"></div>
+    </div>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const statusEl = document.getElementById('status');
+    const resultEl = document.getElementById('result');
+    const sendBtn = document.getElementById('send');
+    let admin = null;
+
+    function setText(node, text, ok) {
+      node.textContent = text;
+      node.className = ok ? 'ok' : 'err';
+    }
+
+    document.getElementById('connectForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (admin) admin.disconnect();
+      setText(statusEl, 'Connecting...', true);
+      admin = io('/admin', { auth: { adminKey: document.getElementById('key').value } });
+
+      admin.on('connect', () => { setText(statusEl, 'Connected as admin', true); sendBtn.disabled = false; });
+      admin.on('disconnect', () => { setText(statusEl, 'Disconnected', false); sendBtn.disabled = true; });
+      // A wrong key is rejected by the server middleware; its message arrives here.
+      admin.on('connect_error', (err) => {
+        setText(statusEl, `Refused: ${err.message}`, false);
+        sendBtn.disabled = true;
+        admin.disconnect();
+      });
+    });
+
+    document.getElementById('announceForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!admin || !admin.connected) return;
+      admin.emit('announce', document.getElementById('msg').value, (res) => {
+        if (res && res.ok) setText(resultEl, `Sent to ${res.boards} connected board(s).`, true);
+        else setText(resultEl, (res && res.error) || 'Failed to send', false);
+      });
+    });
+  </script>
+</body>
+</html>
